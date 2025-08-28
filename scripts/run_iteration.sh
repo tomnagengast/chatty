@@ -2,6 +2,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Debug mode (set DEBUG=1 to enable)
+DEBUG="${DEBUG:-0}"
+
 # ---- helpers ---------------------------------------------------------------
 append_block () {
   # $1 = filepath; $2 = output file
@@ -13,6 +16,7 @@ append_block () {
 
 # ---- build dynamic prompt --------------------------------------------------
 PROMPT_FILE="$(mktemp)"
+echo "[iterate] Building prompt from specs and fix_plan..."
 {
   printf "SYSTEM\nYou are the single iteration of the Ralph loop.\n\n"
   printf "STACK (verbatim contents follow):\n"
@@ -51,14 +55,43 @@ Return ONLY the JSON object (no fences, no extra text).
 EOF
 
 # ---- run Claude Code (headless) -------------------------------------------
-ITER_JSON="$(claude -p "$(cat "$PROMPT_FILE")" \
-  --output-format json \
-  --permission-mode plan \
-  --allowedTools "Read" \
-  --max-turns 1 || true)" # don't crash the script; we handle empty/invalid output
+echo "[iterate] Calling Claude to process iteration..."
+
+# Save prompt for debugging
+if [ "$DEBUG" = "1" ]; then
+  cp "$PROMPT_FILE" .claude/last-prompt.md
+  echo "[iterate] Prompt saved to .claude/last-prompt.md"
+fi
+
+# Note: We don't use --output-format json here as it returns metadata, not the actual response
+# Simplified call without permission mode for now
+ITER_RESPONSE="$(claude -p "$(cat "$PROMPT_FILE")" \
+  --max-turns 1 2>&1 || echo '{}')"
 
 mkdir -p .claude
-echo "${ITER_JSON:-{}}" > .claude/.last-iteration.json
+
+# Save raw response for debugging
+if [ "$DEBUG" = "1" ]; then
+  echo "$ITER_RESPONSE" > .claude/last-response-raw.txt
+  echo "[iterate] Raw response saved to .claude/last-response-raw.txt"
+fi
+
+# Try to parse as JSON, fall back to empty object if invalid
+if echo "$ITER_RESPONSE" | jq empty 2>/dev/null; then
+  ITER_JSON="$ITER_RESPONSE"
+  echo "[iterate] Response is valid JSON"
+else
+  echo "[iterate] Warning: Response is not valid JSON, attempting to extract..."
+  # Try to extract JSON from the response (in case it has extra text)
+  ITER_JSON=$(echo "$ITER_RESPONSE" | grep -o '{.*}' | head -1 || echo '{}')
+  if [ "$ITER_JSON" = "{}" ]; then
+    echo "[iterate] ERROR: Could not extract valid JSON from response"
+    echo "[iterate] Run with DEBUG=1 to see the full response"
+    exit 1
+  fi
+fi
+
+echo "${ITER_JSON}" > .claude/.last-iteration.json
 
 # ---- apply diffs safely ----------------------------------------------------
 # Guard against missing or null .diffs

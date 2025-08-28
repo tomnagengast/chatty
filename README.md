@@ -1,13 +1,13 @@
-# Chatty - Native macOS/iOS MCP Client
+# Chatty - Native macOS MCP Client
 
-A native Swift implementation of a Model Context Protocol (MCP) client with an integrated assistant engine, inspired by the [Ralph engineering methodology](https://ghuntley.com/ralph/).
+A native Swift implementation of a Model Context Protocol (MCP) client with an integrated assistant engine, built using the [Ralph engineering methodology](https://ghuntley.com/ralph/).
 
 ## Overview
 
-Chatty is a macOS/iOS application that combines:
-- **MCP Client**: Full-featured client supporting stdio and HTTP/SSE transports
-- **Assistant Engine**: Ralph-style deterministic loop processing with context management
-- **Native UI**: SwiftUI interface optimized for Apple platforms
+Chatty is a macOS application that provides:
+- **MCP Client**: Full-featured client supporting stdio and HTTP/SSE transports for connecting to MCP servers
+- **Assistant Engine**: Intelligent task processing with context management and tool invocation
+- **Native UI**: SwiftUI interface designed specifically for macOS
 
 ## Architecture
 
@@ -28,10 +28,10 @@ This project uses an automated Ralph loop for development. Each iteration:
 
 ## Prerequisites
 
-- **macOS 14.0+** with Xcode 15+
-- **Swift 6.2+** (verify with `swift --version`)
-- **Claude CLI** ([install instructions](https://docs.anthropic.com/en/docs/claude-code))
-- **Git** (for version control)
+- **macOS 14.0+** (Sonoma or later)
+- **Xcode 15+** with Swift 6.2+
+- **Claude CLI** for Ralph iterations ([install instructions](https://docs.anthropic.com/en/docs/claude-code))
+- **Git** for version control
 
 ### Optional Tools
 
@@ -43,22 +43,25 @@ brew install swift-format
 brew install swiftlint
 ```
 
-## Running Ralph
+## Getting Started
 
 ### First Time Setup
 
 ```bash
-# Clone and enter the repository
+# Clone the repository
 git clone <repository-url> chatty
 cd chatty
 
-# Initialize the environment
+# Open in Xcode (current development)
+open Chatty/Chatty.xcodeproj
+
+# Or initialize Ralph environment for automated development
 ./scripts/bootstrap_env.sh
 ```
 
-### Run an Iteration
+### Running Ralph Iterations
 
-Execute a single Ralph iteration:
+Execute a single automated development iteration:
 
 ```bash
 ./scripts/run_iteration.sh
@@ -66,7 +69,7 @@ Execute a single Ralph iteration:
 
 This will:
 1. Select the next task from `fix_plan.md`
-2. Generate and apply code changes
+2. Generate and apply code changes using Claude
 3. Run validation (format → build → test → lint)
 4. Output `true` if successful, `false` if validation fails
 
@@ -102,21 +105,28 @@ done
 
 ```
 chatty/
-├── CLAUDE.md           # Project-specific instructions
-├── fix_plan.md         # Task queue (Ralph picks from here)
+├── CLAUDE.md           # Project-specific instructions for Claude Code
+├── README.md           # This file
+├── fix_plan.md         # Task queue with implementation roadmap
 ├── specs/              # Architectural specifications
 │   ├── architecture.md # Overall system design
-│   ├── assistant_loop.md # Ralph engine specs
-│   ├── mcp_client.md   # MCP protocol implementation
+│   ├── assistant_loop.md # Assistant engine specifications
+│   ├── mcp_client.md   # MCP protocol implementation details
 │   └── ui.md           # User interface specifications
 ├── scripts/
-│   ├── bootstrap_env.sh # Initial setup
+│   ├── bootstrap_env.sh # Initial environment setup
 │   └── run_iteration.sh # Ralph loop executor
-├── Sources/            # Swift source code
-│   ├── ChattyApp/      # SwiftUI application
+├── Chatty/             # Current Xcode project
+│   ├── Chatty.xcodeproj/  # Xcode project files
+│   └── Chatty/         # SwiftUI app source
+│       ├── ChattyApp.swift
+│       ├── ContentView.swift
+│       └── Item.swift
+├── Sources/            # (To be created) Swift Package Manager structure
+│   ├── ChattyApp/      # SwiftUI application layer
 │   ├── MCPClient/      # MCP client implementation
 │   └── Assistant/      # Assistant engine
-└── Tests/              # Unit and integration tests
+└── Tests/              # (To be created) Unit and integration tests
 ```
 
 ## Monitoring Progress
@@ -152,10 +162,16 @@ vim <problem-file>
 
 ## Development Workflow
 
+### Manual Development
+1. Open project in Xcode: `open Chatty/Chatty.xcodeproj`
+2. Build and run using Xcode (⌘+R)
+3. Make changes and test in the simulator or on device
+
+### Ralph Automated Development
 1. **Add Tasks**: Edit `fix_plan.md` to add new tasks at the end
 2. **Update Specs**: Modify files in `specs/` for architectural changes
-3. **Adjust Signs**: Edit `CLAUDE.md` to add project-specific rules
-4. **Run Ralph**: Execute `./scripts/run_iteration.sh`
+3. **Adjust Instructions**: Edit `CLAUDE.md` to add project-specific rules
+4. **Run Iteration**: Execute `./scripts/run_iteration.sh`
 5. **Validate**: Ensure builds and tests pass
 6. **Commit**: Save progress with meaningful commit messages
 
@@ -226,12 +242,26 @@ git reset --hard HEAD
 4. Ensure all tests pass
 5. Submit a pull request
 
+## Current Status
+
+The project is in early development with the following completed:
+- ✅ Project structure and specifications defined
+- ✅ Xcode project initialized with basic SwiftUI app
+- ✅ Ralph automation scripts configured
+- 🚧 Swift Package Manager migration pending (task #1)
+- 🚧 MCP client implementation pending (tasks #2-4)
+- 🚧 Assistant engine pending (tasks #5-6)
+- 🚧 Full UI implementation pending (tasks #7-8)
+
+See `fix_plan.md` for the complete implementation roadmap.
+
 ## License
 
-[Specify your license here]
+[MIT License - to be added]
 
 ## Acknowledgments
 
 - [Ralph methodology](https://ghuntley.com/ralph/) by Geoffrey Huntley
 - [Model Context Protocol](https://modelcontextprotocol.io/) specification
 - Claude Code for AI-assisted development
+- SwiftUI and Swift development community
