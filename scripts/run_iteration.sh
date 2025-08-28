@@ -47,11 +47,12 @@ cat >> "$PROMPT_FILE" <<'EOF'
 INSTRUCTIONS
 - Follow SIGNS strictly (no placeholders; search before write; minimal compiling diffs).
 - Select the first unblocked task from fix_plan.md.
-- Return STRICT JSON with: selected_task_id, why_this_task, plan, diffs[], validator{}, fix_plan_updates[].
+- You may use tools to read files, search the codebase, and write code as needed.
+- After completing your implementation, return STRICT JSON with: selected_task_id, why_this_task, plan, diffs[], validator{}, fix_plan_updates[].
 - Diffs must be unified patches that apply cleanly with `git apply`.
 
 OUTPUT
-Return ONLY the JSON object (no fences, no extra text).
+After using any necessary tools to complete the task, return ONLY the JSON object (no fences, no extra text) as your final message.
 EOF
 
 # ---- run Claude Code (headless) -------------------------------------------
@@ -63,10 +64,11 @@ if [ "$DEBUG" = "1" ]; then
   echo "[iterate] Prompt saved to .claude/last-prompt.md"
 fi
 
-# Note: We don't use --output-format json here as it returns metadata, not the actual response
-# Simplified call without permission mode for now
+# Note: We don't specify --max-turns to allow Claude to use as many turns as needed
+# We use --allowedTools to permit file operations without permission prompts
+# The final response should be the JSON object after completing the implementation
 ITER_RESPONSE="$(claude -p "$(cat "$PROMPT_FILE")" \
-  --max-turns 1 2>&1 || echo '{}')"
+  --allowedTools Read,Write,Edit,MultiEdit,Grep,Glob,LS,Bash 2>&1 || echo '{}')"
 
 mkdir -p .claude
 
@@ -76,19 +78,29 @@ if [ "$DEBUG" = "1" ]; then
   echo "[iterate] Raw response saved to .claude/last-response-raw.txt"
 fi
 
-# Try to parse as JSON, fall back to empty object if invalid
+# Try to parse as JSON, fall back to extracting from response
+# Claude may output tool usage logs before the final JSON, so we look for the last JSON object
 if echo "$ITER_RESPONSE" | jq empty 2>/dev/null; then
   ITER_JSON="$ITER_RESPONSE"
   echo "[iterate] Response is valid JSON"
 else
-  echo "[iterate] Warning: Response is not valid JSON, attempting to extract..."
-  # Try to extract JSON from the response (in case it has extra text)
-  ITER_JSON=$(echo "$ITER_RESPONSE" | grep -o '{.*}' | head -1 || echo '{}')
-  if [ "$ITER_JSON" = "{}" ]; then
+  echo "[iterate] Response contains non-JSON text, extracting JSON object..."
+  # Try to extract the last JSON object from the response (Claude's final output)
+  # This handles cases where tool usage is logged before the JSON
+  ITER_JSON=$(echo "$ITER_RESPONSE" | tac | grep -m1 -o '{.*}' | tac || echo '{}')
+  
+  # If still no valid JSON, try to find a more complex JSON structure
+  if [ "$ITER_JSON" = "{}" ] || ! echo "$ITER_JSON" | jq empty 2>/dev/null; then
+    # Extract everything between first { and last } (handles multiline JSON)
+    ITER_JSON=$(echo "$ITER_RESPONSE" | awk '/^{/{p=1} p{print} /^}/{if(p) exit}' || echo '{}')
+  fi
+  
+  if [ "$ITER_JSON" = "{}" ] || ! echo "$ITER_JSON" | jq empty 2>/dev/null; then
     echo "[iterate] ERROR: Could not extract valid JSON from response"
     echo "[iterate] Run with DEBUG=1 to see the full response"
     exit 1
   fi
+  echo "[iterate] Successfully extracted JSON from response"
 fi
 
 echo "${ITER_JSON}" > .claude/.last-iteration.json

@@ -2,16 +2,17 @@
 
 ## Tasks
 
-### 0. create-package-swift
+### 0. create-package-swift ✅
 - **id**: create-package-swift
 - **rationale**: Create minimal Package.swift file to enable Swift Package Manager builds
 - **acceptance**: 
-  - Package.swift exists with valid syntax
-  - Defines executable product named "Chatty"
-  - Sets macOS 14.0 platform minimum
+  - Package.swift exists with valid syntax ✅
+  - Defines executable product named "Chatty" ✅
+  - Sets macOS 14.0 platform minimum ✅
 - **files**: Package.swift
 - **est_effort**: XS
 - **dependencies**: []
+- **status**: COMPLETED
 
 ### 1. project-setup
 - **id**: project-setup
