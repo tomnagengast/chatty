@@ -2,16 +2,27 @@
 
 ## Tasks
 
-### 1. project-setup
-- **id**: project-setup
-- **rationale**: Initialize Swift package structure with proper dependencies and build configuration
+### 0. create-package-swift
+- **id**: create-package-swift
+- **rationale**: Create minimal Package.swift file to enable Swift Package Manager builds
 - **acceptance**: 
-  - Package.swift exists with macOS 14.0 platform
-  - Build succeeds with `swift build`
-  - Basic app target launches
-- **files**: Package.swift, .gitignore, Sources/ChattyApp/ChattyApp.swift
+  - Package.swift exists with valid syntax
+  - Defines executable product named "Chatty"
+  - Sets macOS 14.0 platform minimum
+- **files**: Package.swift
 - **est_effort**: XS
 - **dependencies**: []
+
+### 1. project-setup
+- **id**: project-setup
+- **rationale**: Complete Swift package structure with source directories and initial app file
+- **acceptance**: 
+  - Sources/ChattyApp directory exists
+  - Main.swift compiles with `swift build`
+  - Basic executable runs
+- **files**: Sources/ChattyApp/Main.swift, .gitignore
+- **est_effort**: XS
+- **dependencies**: [create-package-swift]
 
 ### 2. mcp-models
 - **id**: mcp-models  
